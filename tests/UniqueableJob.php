@@ -13,7 +13,7 @@ class UniqueableJob implements Uniqueable, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $data;
+    public $data;
 
     public static $test;
 
@@ -22,9 +22,9 @@ class UniqueableJob implements Uniqueable, ShouldQueue
         $this->data = $data;
     }
 
-    public function uniqueable()
+    public function uniqueable($event)
     {
-        return md5(json_encode($this->data));
+        return md5(json_encode($event));
     }
 
     public function handle()

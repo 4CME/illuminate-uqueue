@@ -2,6 +2,7 @@
 
 namespace Mingalevme\Illuminate\UQueue;
 
+use Illuminate\Support\Facades\App;
 use Mingalevme\Illuminate\UQueue\Jobs\Uniqueable;
 
 class RedisQueue extends \Illuminate\Queue\RedisQueue
@@ -17,16 +18,16 @@ class RedisQueue extends \Illuminate\Queue\RedisQueue
         $queue = $this->getQueue($queue);
 
         return $this->getConnection()->eval(
-            LuaScripts::size(), 3, $queue, $queue.':delayed', $queue.':reserved'
+            LuaScripts::size(), 3, $queue, $queue . ':delayed', $queue . ':reserved'
         );
     }
 
     /**
      * Push a raw payload onto the queue.
      *
-     * @param  string  $payload
-     * @param  string|null  $queue
-     * @param  array  $options
+     * @param string $payload
+     * @param string|null $queue
+     * @param array $options
      * @return mixed
      */
     public function pushRaw($payload, $queue = null, array $options = [])
@@ -35,10 +36,10 @@ class RedisQueue extends \Illuminate\Queue\RedisQueue
 
         $this->getConnection()->eval(
             LuaScripts::push(), 2,
-                $queue, // KEY1
-                $queue.':notify', // KEY2
-                microtime(true), // ARGV1
-                $payload // ARGV2
+            $queue, // KEY1
+            $queue . ':notify', // KEY2
+            microtime(true), // ARGV1
+            $payload // ARGV2
         );
 
         return json_decode($payload, true)['id'] ?? null;
@@ -47,48 +48,50 @@ class RedisQueue extends \Illuminate\Queue\RedisQueue
     /**
      * Create a payload string from the given job and data.
      *
-     * @param  string  $job
-     * @param  string  $queue
-     * @param  mixed  $data
+     * @param string $job
+     * @param string $queue
+     * @param mixed $data
      * @return array
      */
     protected function createPayloadArray($job, $queue, $data = '')
     {
         $payload = parent::createPayloadArray($job, $queue, $data);
 
-        if (is_object($job) && $job instanceof Uniqueable) {
-            $payload['id'] = $job->uniqueable();
+        $getJob = App::make($job->class);
+
+        if ($getJob instanceof Uniqueable) {
+            $payload['id'] = $getJob->uniqueable($job->data[0]);
             if (!empty($payload['uuid'])) {
                 $payload['uuid'] = $this->uuid($payload['id']);
             }
         }
-        
+
         return $payload;
     }
-    
+
     /**
      * Migrate the delayed jobs that are ready to the regular queue.
      *
-     * @param  string  $from
-     * @param  string  $to
+     * @param string $from
+     * @param string $to
      * @return array
      */
     public function migrateExpiredJobs($from, $to)
     {
         return $this->getConnection()->eval(
             LuaScripts::migrateExpiredJobs(), 3,
-                $from, // KEY1
-                $to, // KEY2
-                $to.':notify', // KEY3
-                $this->currentTime()  // ARGV1
+            $from, // KEY1
+            $to, // KEY2
+            $to . ':notify', // KEY3
+            $this->currentTime()  // ARGV1
         );
     }
 
     /**
      * Retrieve the next job from the queue.
      *
-     * @param  string  $queue
-     * @param  bool  $block
+     * @param string $queue
+     * @param bool $block
      * @return array
      */
     protected function retrieveNextJob($queue, $block = true)
@@ -96,8 +99,8 @@ class RedisQueue extends \Illuminate\Queue\RedisQueue
         $nextJob = $this->getConnection()->eval(
             LuaScripts::pop(), 3,
             $queue, // KEYS1
-            $queue.':reserved', // KEYS2
-            $queue.':notify', // KEYS3
+            $queue . ':reserved', // KEYS2
+            $queue . ':notify', // KEYS3
             $this->availableAt($this->retryAfter) // ARGV1
         );
 
@@ -107,8 +110,8 @@ class RedisQueue extends \Illuminate\Queue\RedisQueue
 
         [$job, $reserved] = $nextJob;
 
-        if (! $job && ! is_null($this->blockFor) && $block &&
-            $this->getConnection()->blpop([$queue.':notify'], $this->blockFor)) {
+        if (!$job && !is_null($this->blockFor) && $block &&
+            $this->getConnection()->blpop([$queue . ':notify'], $this->blockFor)) {
             return $this->retrieveNextJob($queue, false);
         }
 

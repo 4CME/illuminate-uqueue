@@ -4,5 +4,5 @@ namespace Mingalevme\Illuminate\UQueue\Jobs;
 
 interface Uniqueable
 {
-    public function uniqueable();
+    public function uniqueable($event);
 }
