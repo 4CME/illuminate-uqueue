@@ -1,5 +1,5 @@
 {
-    "name": "mingalevme/illuminate-uqueue",
+    "name": "4cme/illuminate-uqueue",
     "description": "Laravel/Lumen uniqueable queues (Database, Redis)",
     "keywords": [
         "laravel",
