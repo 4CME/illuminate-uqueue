@@ -57,12 +57,14 @@ class RedisQueue extends \Illuminate\Queue\RedisQueue
     {
         $payload = parent::createPayloadArray($job, $queue, $data);
 
-        $getJob = App::make($job->class);
+        if (property_exists($job, 'class')) {
+            $getJob = App::make($job->class);
 
-        if ($getJob instanceof Uniqueable) {
-            $payload['id'] = $getJob->uniqueable($job->data[0]);
-            if (!empty($payload['uuid'])) {
-                $payload['uuid'] = $this->uuid($payload['id']);
+            if ($getJob instanceof Uniqueable) {
+                $payload['id'] = $getJob->uniqueable($job->data[0]);
+                if (!empty($payload['uuid'])) {
+                    $payload['uuid'] = $this->uuid($payload['id']);
+                }
             }
         }
 

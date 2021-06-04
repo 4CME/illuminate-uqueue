@@ -21,10 +21,12 @@ class DatabaseQueue extends \Illuminate\Queue\DatabaseQueue
     {
         $payload = parent::createPayloadArray($job, $data, $queue);
 
-        $getJob = App::make($job->class);
+        if (property_exists($job, 'class')) {
+            $getJob = App::make($job->class);
 
-        if ($getJob instanceof Uniqueable) {
-            $payload['unique_id'] = $getJob->uniqueable($job->data[0]);
+            if ($getJob instanceof Uniqueable) {
+                $payload['unique_id'] = $getJob->uniqueable($job->data[0]);
+            }
         }
 
         return $payload;
